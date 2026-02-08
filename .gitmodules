@@ -1,0 +1,3 @@
+[submodule "skills/wallet/assets/bips"]
+	path = skills/wallet/assets/bips
+	url = https://github.com/bitcoin/bips.git
