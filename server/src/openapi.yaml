@@ -1,0 +1,922 @@
+openapi: 3.0.3
+info:
+  title: Manatee Payment System API
+  description: |
+    Manatee 数字货币支付系统 API 文档
+    
+    提供钱包管理、订单支付、用户认证等功能。
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@manatee.example.com
+
+servers:
+  - url: http://localhost:6543
+    description: 本地开发服务器
+  - url: https://api.manatee.example.com
+    description: 生产服务器
+
+tags:
+  - name: auth
+    description: 用户认证相关接口
+  - name: wallet
+    description: 钱包管理相关接口
+  - name: health
+    description: 健康检查接口
+
+paths:
+  /api/auth/login:
+    post:
+      tags:
+        - auth
+      summary: 用户登录
+      description: 用户登录，成功后返回 session ID
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: 登录成功
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: sessionId=xxx; HttpOnly; SameSite=Strict; Path=/; Max-Age=86400
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          description: 请求参数错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 用户名或密码错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: 服务器内部错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security: []
+
+  /api/auth/register:
+    post:
+      tags:
+        - auth
+      summary: 用户注册
+      description: 注册新用户账号
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '200':
+          description: 注册成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterResponse'
+        '400':
+          description: 请求参数错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: 服务器内部错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security: []
+
+  /api/auth/logout:
+    post:
+      tags:
+        - auth
+      summary: 用户登出
+      description: 登出当前用户，清除 session
+      operationId: logout
+      responses:
+        '200':
+          description: 登出成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LogoutResponse'
+        '500':
+          description: 服务器内部错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - cookieAuth: []
+
+  /api/auth/verify:
+    get:
+      tags:
+        - auth
+      summary: 验证 Session
+      description: 验证当前用户的 session 是否有效
+      operationId: verifySession
+      responses:
+        '200':
+          description: Session 有效
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifySessionResponse'
+        '401':
+          description: Session 无效或已过期
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: 服务器内部错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - cookieAuth: []
+
+  /api/wallet/address:
+    post:
+      tags:
+        - wallet
+      summary: 获取钱包地址
+      description: 记录和验证客户端返回的钱包地址信息
+      operationId: getWalletAddress
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WalletAddressRequest'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WalletAddressResponse'
+        '400':
+          description: 请求参数错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: 服务器内部错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - cookieAuth: []
+
+  /api/wallet/verify:
+    post:
+      tags:
+        - wallet
+      summary: 验证钱包地址
+      description: 验证钱包地址的签名
+      operationId: verifyWalletAddress
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyWalletAddressRequest'
+      responses:
+        '200':
+          description: 验证成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifyWalletAddressResponse'
+        '400':
+          description: 请求参数错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: 服务器内部错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - cookieAuth: []
+
+  /api/wallet/derive:
+    post:
+      tags:
+        - wallet
+      summary: 派生钱包地址
+      description: 从助记词或私钥派生 TRON 地址
+      operationId: deriveAddress
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeriveAddressRequest'
+      responses:
+        '200':
+          description: 派生成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeriveAddressResponse'
+        '400':
+          description: 请求参数错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: 服务器内部错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - cookieAuth: []
+
+  /api/wallet/save:
+    post:
+      tags:
+        - wallet
+      summary: 保存钱包
+      description: 加密钱包数据并保存到服务器
+      operationId: saveWallet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveWalletRequest'
+      responses:
+        '200':
+          description: 保存成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SaveWalletResponse'
+        '400':
+          description: 请求参数错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: 服务器内部错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - cookieAuth: []
+
+  /api/wallet/get:
+    post:
+      tags:
+        - wallet
+      summary: 获取钱包
+      description: 从服务器读取并解密钱包数据
+      operationId: getWallet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GetWalletRequest'
+      responses:
+        '200':
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetWalletResponse'
+        '400':
+          description: 请求参数错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 钱包不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: 服务器内部错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - cookieAuth: []
+
+  /api/wallet/delete:
+    post:
+      tags:
+        - wallet
+      summary: 删除钱包
+      description: 删除服务器上的钱包数据
+      operationId: deleteWallet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeleteWalletRequest'
+      responses:
+        '200':
+          description: 删除成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteWalletResponse'
+        '400':
+          description: 请求参数错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: 服务器内部错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - cookieAuth: []
+
+  /api/wallet/list:
+    get:
+      tags:
+        - wallet
+      summary: 列出所有钱包
+      description: 获取所有已保存的钱包 ID 列表
+      operationId: listWallets
+      responses:
+        '200':
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListWalletsResponse'
+        '500':
+          description: 服务器内部错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - cookieAuth: []
+
+  /api/wallet/public-key:
+    post:
+      tags:
+        - wallet
+      summary: 获取钱包公钥
+      description: 获取钱包的公钥和地址（不需要密码）
+      operationId: getPublicKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GetPublicKeyRequest'
+      responses:
+        '200':
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetPublicKeyResponse'
+        '400':
+          description: 请求参数错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 钱包不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: 服务器内部错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - cookieAuth: []
+
+  /api/wallet/sign-message:
+    post:
+      tags:
+        - wallet
+      summary: 签名消息
+      description: 使用钱包私钥签名消息
+      operationId: signMessage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignMessageRequest'
+      responses:
+        '200':
+          description: 签名成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignMessageResponse'
+        '400':
+          description: 请求参数错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: 服务器内部错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - cookieAuth: []
+
+  /api/wallet/sign-transaction:
+    post:
+      tags:
+        - wallet
+      summary: 签名交易
+      description: 使用钱包私钥签名交易
+      operationId: signTransaction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignTransactionRequest'
+      responses:
+        '200':
+          description: 签名成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignTransactionResponse'
+        '400':
+          description: 请求参数错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: 服务器内部错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - cookieAuth: []
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionId
+      description: 通过 Cookie 传递的 session ID
+
+  schemas:
+    ErrorResponse:
+      type: object
+      required:
+        - success
+        - error
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          example: "错误信息"
+
+    LoginRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          example: "admin"
+        password:
+          type: string
+          format: password
+          example: "password123"
+
+    LoginResponse:
+      type: object
+      required:
+        - success
+      properties:
+        success:
+          type: boolean
+          example: true
+        sessionId:
+          type: string
+          example: "abc123def456"
+        username:
+          type: string
+          example: "admin"
+        error:
+          type: string
+
+    RegisterRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          example: "user123"
+        password:
+          type: string
+          format: password
+          minLength: 6
+          example: "password123"
+
+    RegisterResponse:
+      type: object
+      required:
+        - success
+      properties:
+        success:
+          type: boolean
+          example: true
+        userId:
+          type: string
+          example: "user_id_123"
+        username:
+          type: string
+          example: "user123"
+        error:
+          type: string
+
+    LogoutResponse:
+      type: object
+      required:
+        - success
+      properties:
+        success:
+          type: boolean
+          example: true
+        error:
+          type: string
+
+    VerifySessionResponse:
+      type: object
+      required:
+        - success
+      properties:
+        success:
+          type: boolean
+          example: true
+        username:
+          type: string
+          example: "admin"
+        error:
+          type: string
+
+    WalletAddressRequest:
+      type: object
+      required:
+        - walletType
+      properties:
+        walletType:
+          type: string
+          enum: [onekey, ledger, trezor, mnemonic, private_key]
+          example: "onekey"
+        address:
+          type: string
+          example: "TXYZabcdefghijklmnopqrstuvwxyz123456"
+
+    WalletAddressResponse:
+      type: object
+      required:
+        - success
+      properties:
+        success:
+          type: boolean
+          example: true
+        walletType:
+          type: string
+          example: "onekey"
+        message:
+          type: string
+          example: "Wallet address should be obtained from client-side wallet connection"
+        error:
+          type: string
+
+    VerifyWalletAddressRequest:
+      type: object
+      required:
+        - address
+        - message
+        - signature
+      properties:
+        address:
+          type: string
+          example: "TXYZabcdefghijklmnopqrstuvwxyz123456"
+        message:
+          type: string
+          example: "Hello, World!"
+        signature:
+          type: string
+          example: "0x1234..."
+
+    VerifyWalletAddressResponse:
+      type: object
+      required:
+        - success
+      properties:
+        success:
+          type: boolean
+          example: true
+        verified:
+          type: boolean
+          example: true
+        error:
+          type: string
+
+    DeriveAddressRequest:
+      type: object
+      properties:
+        mnemonic:
+          type: string
+          example: "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about"
+        privateKey:
+          type: string
+          example: "0x1234567890abcdef..."
+        index:
+          type: integer
+          default: 0
+          example: 0
+
+    DeriveAddressResponse:
+      type: object
+      required:
+        - success
+      properties:
+        success:
+          type: boolean
+          example: true
+        address:
+          type: string
+          example: "TXYZabcdefghijklmnopqrstuvwxyz123456"
+        privateKey:
+          type: string
+          example: "0x1234567890abcdef..."
+        publicKey:
+          type: string
+          example: "0xabcdef..."
+        error:
+          type: string
+
+    SaveWalletRequest:
+      type: object
+      required:
+        - walletId
+        - password
+        - address
+      properties:
+        walletId:
+          type: string
+          example: "TN3RXvzER4WJgsbS"
+        password:
+          type: string
+          format: password
+          example: "password123"
+        mnemonic:
+          type: string
+          example: "abandon abandon abandon..."
+        privateKey:
+          type: string
+          example: "0x1234567890abcdef..."
+        address:
+          type: string
+          example: "TXYZabcdefghijklmnopqrstuvwxyz123456"
+        publicKey:
+          type: string
+          example: "0xabcdef..."
+
+    SaveWalletResponse:
+      type: object
+      required:
+        - success
+      properties:
+        success:
+          type: boolean
+          example: true
+        walletId:
+          type: string
+          example: "TN3RXvzER4WJgsbS"
+        error:
+          type: string
+
+    GetWalletRequest:
+      type: object
+      required:
+        - walletId
+        - password
+      properties:
+        walletId:
+          type: string
+          example: "TN3RXvzER4WJgsbS"
+        password:
+          type: string
+          format: password
+          example: "password123"
+
+    GetWalletResponse:
+      type: object
+      required:
+        - success
+      properties:
+        success:
+          type: boolean
+          example: true
+        walletId:
+          type: string
+          example: "TN3RXvzER4WJgsbS"
+        mnemonic:
+          type: string
+          example: "abandon abandon abandon..."
+        privateKey:
+          type: string
+          example: "0x1234567890abcdef..."
+        address:
+          type: string
+          example: "TXYZabcdefghijklmnopqrstuvwxyz123456"
+        publicKey:
+          type: string
+          example: "0xabcdef..."
+        error:
+          type: string
+
+    DeleteWalletRequest:
+      type: object
+      required:
+        - walletId
+      properties:
+        walletId:
+          type: string
+          example: "TN3RXvzER4WJgsbS"
+
+    DeleteWalletResponse:
+      type: object
+      required:
+        - success
+      properties:
+        success:
+          type: boolean
+          example: true
+        error:
+          type: string
+
+    ListWalletsResponse:
+      type: object
+      required:
+        - success
+      properties:
+        success:
+          type: boolean
+          example: true
+        walletIds:
+          type: array
+          items:
+            type: string
+          example: ["TN3RXvzER4WJgsbS", "TXYZabcdefghijklmnopqrstuvwxyz123456"]
+        error:
+          type: string
+
+    GetPublicKeyRequest:
+      type: object
+      required:
+        - walletId
+      properties:
+        walletId:
+          type: string
+          example: "TN3RXvzER4WJgsbS"
+
+    GetPublicKeyResponse:
+      type: object
+      required:
+        - success
+      properties:
+        success:
+          type: boolean
+          example: true
+        walletId:
+          type: string
+          example: "TN3RXvzER4WJgsbS"
+        address:
+          type: string
+          example: "TXYZabcdefghijklmnopqrstuvwxyz123456"
+        publicKey:
+          type: string
+          example: "0xabcdef..."
+        error:
+          type: string
+
+    SignMessageRequest:
+      type: object
+      required:
+        - walletId
+        - password
+        - message
+      properties:
+        walletId:
+          type: string
+          example: "TN3RXvzER4WJgsbS"
+        password:
+          type: string
+          format: password
+          example: "password123"
+        message:
+          type: string
+          example: "Hello, World!"
+
+    SignMessageResponse:
+      type: object
+      required:
+        - success
+      properties:
+        success:
+          type: boolean
+          example: true
+        signature:
+          type: string
+          example: "0x1234..."
+        error:
+          type: string
+
+    SignTransactionRequest:
+      type: object
+      required:
+        - walletId
+        - password
+        - transaction
+      properties:
+        walletId:
+          type: string
+          example: "TN3RXvzER4WJgsbS"
+        password:
+          type: string
+          format: password
+          example: "password123"
+        transaction:
+          type: object
+          description: TRON 交易对象
+
+    SignTransactionResponse:
+      type: object
+      required:
+        - success
+      properties:
+        success:
+          type: boolean
+          example: true
+        signedTransaction:
+          type: object
+          description: 签名后的交易对象
+        error:
+          type: string

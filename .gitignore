@@ -25,3 +25,18 @@ dist-ssr
 
 node_modules
 **node_modules**
+
+temp
+tmp
+
+# 服务器 private 目录（包含加密的私钥）
+server/private/
+private/
+
+# 用户数据目录
+data/
+
+# 环境变量文件
+**.env
+**.env.local
+**.env.*.local

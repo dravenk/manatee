@@ -9,16 +9,29 @@
     "build": "bun run build.ts"
   },
   "dependencies": {
+    "@ledgerhq/hw-transport-webusb": "^6.30.0",
+    "@metamask/eth-sig-util": "^8.2.0",
+    "@metamask/eth-simple-keyring": "^11.0.0",
+    "@noble/curves": "^2.0.1",
+    "@noble/hashes": "^2.0.1",
     "@radix-ui/react-label": "^2.1.7",
     "@radix-ui/react-select": "^2.2.6",
     "@radix-ui/react-slot": "^1.2.3",
+    "@scure/bip32": "^2.0.1",
+    "@scure/bip39": "^2.0.1",
+    "@trezor/connect-web": "^9.7.1",
+    "bip39": "^3.1.0",
+    "buffer": "^6.0.3",
     "bun-plugin-tailwind": "^0.1.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "crypto-js": "^4.2.0",
     "lucide-react": "^0.545.0",
+    "metamask": "^0.0.1-security",
     "react": "^19",
     "react-dom": "^19",
-    "tailwind-merge": "^3.3.1"
+    "tailwind-merge": "^3.3.1",
+    "tronweb": "^6.2.0"
   },
   "devDependencies": {
     "@types/react": "^19",
