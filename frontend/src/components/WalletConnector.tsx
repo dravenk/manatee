@@ -344,7 +344,7 @@ export function WalletConnector({ walletId }: WalletConnectorProps = {}) {
       <CardHeader>
         <CardTitle>钱包连接</CardTitle>
         <CardDescription>
-          连接硬件钱包或导入助记词/私钥以获取支付地址（公钥）
+          连接硬件钱包以获取支付地址（公钥）
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -448,32 +448,6 @@ export function WalletConnector({ walletId }: WalletConnectorProps = {}) {
             >
               {isConnecting ? '连接中...' : '连接钱包'}
             </Button>
-
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">或</span>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Button
-                onClick={() => setShowImport(true)}
-                variant="outline"
-                className="w-full"
-              >
-                导入助记词/私钥
-              </Button>
-              <Button
-                onClick={() => setShowMetaMaskImport(true)}
-                variant="outline"
-                className="w-full"
-              >
-                导入 MetaMask 钱包
-              </Button>
-            </div>
 
             {error && (
               <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md">
