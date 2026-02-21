@@ -1,0 +1,115 @@
+services:
+  # 后端 API 服务
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: manatee-server
+    env_file:
+      - ./server/.env
+    ports:
+      - "${SERVER_PORT:-6543}:${SERVER_PORT:-6543}"
+    environment:
+      - NODE_ENV=production
+      - PORT=${SERVER_PORT:-6543}
+      - PRIVATE_DIR=/app/private
+    volumes:
+      # 挂载 private 目录以持久化钱包数据
+      - ./server/private:/app/private
+      # 挂载 data 目录以持久化用户数据
+      - ./server/data:/app/data
+    networks:
+      - manatee-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "bun", "-e", "const port = process.env.PORT || '6543'; fetch(`http://localhost:${port}`).then(r => r.ok ? process.exit(0) : process.exit(1)).catch(() => process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+  # 前端服务
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_BASE_URL=http://server:${SERVER_PORT:-6543}
+    container_name: manatee-frontend
+    env_file:
+      - ./frontend/.env
+    ports:
+      - "${FRONTEND_PORT:-3456}:${FRONTEND_PORT:-3456}"
+    environment:
+      - NODE_ENV=production
+      - PORT=${FRONTEND_PORT:-3456}
+      - VITE_API_BASE_URL=http://server:${SERVER_PORT:-6543}
+    depends_on:
+      server:
+        condition: service_healthy
+    networks:
+      - manatee-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "bun", "-e", "const port = process.env.PORT || '3456'; fetch(`http://localhost:${port}`).then(r => r.ok ? process.exit(0) : process.exit(1)).catch(() => process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+
+  # Nginx 反向代理（可选，用于生产环境）
+  nginx:
+    image: nginx:alpine
+    container_name: manatee-nginx
+    ports:
+      - "${NGINX_HTTP_PORT:-80}:80"
+      - "${NGINX_HTTPS_PORT:-443}:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      frontend:
+        condition: service_healthy
+      server:
+        condition: service_healthy
+    networks:
+      - manatee-network
+    restart: unless-stopped
+    profiles:
+      - production  # 只在生产环境启用
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 128M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+
+networks:
+  manatee-network:
+    driver: bridge
+
+# 可选：使用命名卷而不是绑定挂载
+# 如果需要使用命名卷，取消下面的注释并修改服务中的 volumes 配置
+# volumes:
+#   server-data:
+#     driver: local
+#   server-private:
+#     driver: local

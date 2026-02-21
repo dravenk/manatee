@@ -3,7 +3,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import { Plus, Wallet as WalletIcon, Loader2, Trash2, X, AlertCircle } from 'lucide-react';
+import { Plus, Wallet as WalletIcon, Loader2, Trash2, X, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { WalletConnector } from '../WalletConnector';
 import { Button } from '../ui/button';
 import { Card, CardContent } from '../ui/card';
@@ -43,6 +43,7 @@ export function WalletPage() {
   const [showAddWalletOptions, setShowAddWalletOptions] = useState(false);
   const [expandedWallets, setExpandedWallets] = useState<Set<string>>(new Set());
   const [derivingAccount, setDerivingAccount] = useState<string | null>(null);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [passwordDialogCallback, setPasswordDialogCallback] = useState<((password: string) => Promise<void>) | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -416,9 +417,24 @@ export function WalletPage() {
   return (
     <div className="flex gap-6 h-full p-6">
       {/* 左侧钱包列表 */}
-      <aside className="w-36 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg flex flex-col shadow-sm">
-        <div className="p-4 border-b border-slate-200 dark:border-slate-800">
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">钱包列表</h3>
+      <aside className={`${isSidebarCollapsed ? 'w-16' : 'w-36'} bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg flex flex-col shadow-sm transition-all duration-300`}>
+        <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+          {!isSidebarCollapsed && (
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">钱包列表</h3>
+          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 ml-auto"
+            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+            title={isSidebarCollapsed ? '展开' : '收起'}
+          >
+            {isSidebarCollapsed ? (
+              <ChevronRight className="h-4 w-4" />
+            ) : (
+              <ChevronLeft className="h-4 w-4" />
+            )}
+          </Button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-2">
@@ -427,9 +443,13 @@ export function WalletPage() {
               <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
             </div>
           ) : wallets.length === 0 ? (
-            <div className="text-center py-8 text-sm text-slate-500 dark:text-slate-400">
-              <p>暂无钱包</p>
-              <p className="mt-2">点击下方 + 按钮添加</p>
+            <div className={`text-center py-8 text-sm text-slate-500 dark:text-slate-400 ${isSidebarCollapsed ? 'px-2' : ''}`}>
+              {!isSidebarCollapsed && (
+                <>
+                  <p>暂无钱包</p>
+                  <p className="mt-2">点击下方 + 按钮添加</p>
+                </>
+              )}
             </div>
           ) : (
             <div className="space-y-2">
@@ -442,12 +462,14 @@ export function WalletPage() {
                   ? accounts.find(acc => (acc.accountIndex || 0) === 0) || accounts[0]
                   : null;
                 
+                const isSelected = selectedWalletId === wallet.walletId && !hasAccounts;
+                
                 return (
                   <div key={wallet.walletId} className="space-y-1">
                     {/* 钱包主卡片 */}
                     <Card
                       className={`cursor-pointer transition-colors group ${
-                        selectedWalletId === wallet.walletId && !hasAccounts
+                        isSelected
                           ? 'bg-primary/10 border-primary'
                           : 'hover:bg-slate-50 dark:hover:bg-slate-800'
                       }`}
@@ -459,32 +481,43 @@ export function WalletPage() {
                         }
                       }}
                     >
-                      <CardContent className="p-3">
-                        <div className="flex items-center gap-2">
-                          <WalletIcon className="h-4 w-4 text-slate-500 dark:text-slate-400 shrink-0" />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
-                              {getWalletDisplayName(wallet)}
-                            </p>
+                      <CardContent className={isSidebarCollapsed ? "p-2 flex justify-center" : "p-3"}>
+                        {isSidebarCollapsed ? (
+                          <div className="flex flex-col items-center gap-1">
+                            <WalletIcon className={`h-5 w-5 ${isSelected ? 'text-primary' : 'text-slate-500 dark:text-slate-400'}`} />
                             {hasAccounts && (
-                              <p className="text-xs text-slate-500 dark:text-slate-400">
-                                {accounts.length} 个账户
-                              </p>
+                              <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                                {accounts.length}
+                              </span>
                             )}
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-100 dark:hover:bg-red-900/20"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteWallet(wallet.walletId, e);
-                            }}
-                            title="删除钱包"
-                          >
-                            <Trash2 className="h-3 w-3 text-red-600 dark:text-red-400" />
-                          </Button>
-                        </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <WalletIcon className="h-4 w-4 text-slate-500 dark:text-slate-400 shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
+                                {getWalletDisplayName(wallet)}
+                              </p>
+                              {hasAccounts && (
+                                <p className="text-xs text-slate-500 dark:text-slate-400">
+                                  {accounts.length} 个账户
+                                </p>
+                              )}
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-100 dark:hover:bg-red-900/20"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteWallet(wallet.walletId, e);
+                              }}
+                              title="删除钱包"
+                            >
+                              <Trash2 className="h-3 w-3 text-red-600 dark:text-red-400" />
+                            </Button>
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   </div>
@@ -498,11 +531,12 @@ export function WalletPage() {
         <div className="p-4 border-t border-slate-200 dark:border-slate-800">
           <Button
             onClick={handleAddWallet}
-            className="w-full"
+            className={isSidebarCollapsed ? "w-full p-2" : "w-full"}
             variant="outline"
+            title={isSidebarCollapsed ? "添加钱包" : undefined}
           >
-            <Plus className="mr-2 h-4 w-4" />
-            添加
+            <Plus className={isSidebarCollapsed ? "h-4 w-4" : "mr-2 h-4 w-4"} />
+            {!isSidebarCollapsed && "添加"}
           </Button>
         </div>
       </aside>
